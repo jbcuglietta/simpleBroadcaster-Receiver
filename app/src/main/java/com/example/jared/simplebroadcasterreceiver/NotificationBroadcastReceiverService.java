@@ -12,6 +12,9 @@ import android.util.Log;
 
 public class NotificationBroadcastReceiverService extends Service {
     private static final String TAG = NotificationBroadcastReceiverService.class.getSimpleName();
+
+    private int count = 0;
+    boolean initialized = false;
     public NotificationBroadcastReceiverService() {
     }
 
@@ -23,12 +26,8 @@ public class NotificationBroadcastReceiverService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i(TAG, "Registering Broadcast Receiver");
-        IntentFilter intentFilter = new IntentFilter(CustomActions.SIMPLE_BROADCAST_ACTION);
-        registerReceiver(receiver,intentFilter);
-        Log.i(TAG,"Receiver Registered Successfully");
-
         if (intent.getAction().equals(CustomActions.START_FOREGROUND_SERVICE)){
+            initialized = true;
             Intent activityIntent = new Intent(this,MainActivity.class);
             activityIntent.setAction(CustomActions.MAIN_ACTION);
             activityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -42,32 +41,37 @@ public class NotificationBroadcastReceiverService extends Service {
                     .setOngoing(true);
             Notification notification = nBuilder.build();
             startForeground(CustomActions.FOREGROUND_SERVICE_ID, notification);
+            count = 0;
 
         }
         else if(intent.getAction().equals(CustomActions.STOP_FOREGROUND_SERVICE)) {
-            Log.i(TAG, "Received Stop Foreground Service Intent");
-            stopForeground(true);
-            stopSelf();
+            if (initialized) {
+                Log.i(TAG, "Received Stop Foreground Service Intent");
+                stopForeground(true);
+                stopSelf();
+            } else{
+                Log.i(TAG,"Service has not been initialized");
+            }
         }
-
+        else if(intent.getAction().equals(CustomActions.SIMPLE_BROADCAST_ACTION)) {
+            if (initialized) {
+                Log.i(TAG, "Received Simple Broadcast Action");
+                Log.i(TAG, "Updating Count");
+                count++;
+                Intent countIntent = new Intent(CustomActions.COUNT_UPDATE_ACTION).putExtra("EXTRA_COUNT", count);
+                sendBroadcast(countIntent);
+            } else{
+                Log.i(TAG,"Service has not been initialized");
+            }
+        }
         return START_STICKY;
     }
 
     @Override
     public void onDestroy() {
         Log.i(TAG, "onDestroy");
-        Log.i(TAG, "Receiver Unregistered");
-        unregisterReceiver(receiver);
         super.onDestroy();
     }
 
-    BroadcastReceiver receiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (intent.getAction().equals(CustomActions.SIMPLE_BROADCAST_ACTION)){
-                Log.i(TAG,"Simple Broadcast Action Detected");
-            }
-        }
-    };
 
 }
