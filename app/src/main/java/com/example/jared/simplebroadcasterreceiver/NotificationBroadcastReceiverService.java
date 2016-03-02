@@ -26,7 +26,6 @@ public class NotificationBroadcastReceiverService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent.getAction().equals(null)) return START_STICKY;
         if (intent.getAction().equals(CustomActions.START_FOREGROUND_SERVICE)){
             initialized = true;
             Intent activityIntent = new Intent(this,MainActivity.class);
@@ -65,7 +64,7 @@ public class NotificationBroadcastReceiverService extends Service {
                 Log.i(TAG,"Service has not been initialized");
             }
         }
-        return START_STICKY;
+        return START_REDELIVER_INTENT;
     }
 
     @Override
